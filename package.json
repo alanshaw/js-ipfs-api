@@ -28,6 +28,7 @@
     "ipfs-merkle-dag": "^0.7.1",
     "is-ipfs": "^0.2.0",
     "isstream": "^0.1.2",
+    "lru-cache": "^4.0.1",
     "multiaddr": "^2.0.2",
     "multipart-stream": "^2.0.1",
     "ndjson": "^1.4.3",

@@ -6,6 +6,12 @@ const promisify = require('promisify-es6')
 const bs58 = require('bs58')
 const bl = require('bl')
 const cleanMultihash = require('../clean-multihash')
+const LRU = require('lru-cache')
+const lruOptions = {
+  max: 128
+}
+
+const cache = LRU(lruOptions)
 
 module.exports = (send) => {
   const api = {
@@ -14,6 +20,7 @@ module.exports = (send) => {
         callback = options
         options = {}
       }
+
       if (!options) {
         options = {}
       }
@@ -22,6 +29,12 @@ module.exports = (send) => {
         multihash = cleanMultihash(multihash, options)
       } catch (err) {
         return callback(err)
+      }
+
+      const node = cache.get(multihash)
+
+      if (node) {
+        return callback(null, node)
       }
 
       send({
@@ -37,9 +50,12 @@ module.exports = (send) => {
             return new DAGLink(l.Name, l.Size, new Buffer(bs58.decode(l.Hash)))
           }))
 
+        cache.set(multihash, node)
+
         callback(null, node)
       })
     }),
+
     put: promisify((obj, options, callback) => {
       if (typeof options === 'function') {
         callback = options
@@ -106,6 +122,8 @@ module.exports = (send) => {
         if (node.toJSON().Hash !== result.Hash) {
           return callback(new Error('Stored object was different from constructed object'))
         }
+
+        cache.set(result.Hash, node)
 
         callback(null, node)
       })
